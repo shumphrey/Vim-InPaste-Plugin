@@ -10,18 +10,24 @@
 " This script refers to InPaste which is a private web service but the VimL could be
 " adapted and made useful to your needs.
 "
-" The following needs to be added to your vimrc
+" The following needs to be added to your vimrc or this won't be loaded
 " let g:inpaste_user = 'username'
 " let g:inpaste_pass = 'password'
+
+" Other people use my vim repo.
+" Don't force them to have inpaste settings
+if !exists("g:inpaste_user")
+  finish
+endif
 
 if exists("g:loaded_inpaste")
   finish
 endif
 let g:loaded_inpaste = 1
 
-if !exists('g:inpaste_user') || strlen(g:inpaste_user) == 0
-    echohl ErrorMsg | echomsg "Please set g:inpaste_user and g:inpaste_pass in your vimrc" | echohl None
-endif
+"if !exists('g:inpaste_user') || strlen(g:inpaste_user) == 0
+"    echohl ErrorMsg | echomsg "Please set g:inpaste_user and g:inpaste_pass in your vimrc" | echohl None
+"endif
 
 " TODO: Make these configurable
 let s:cookie_jar = "~/.vim/cookie_jar"
