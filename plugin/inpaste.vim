@@ -17,11 +17,11 @@
 " Other people use my vim repo.
 " Don't force them to have inpaste settings
 if !exists("g:inpaste_user")
-"  finish
+  finish
 endif
 
 if exists("g:loaded_inpaste")
-"  finish
+  finish
 endif
 let g:loaded_inpaste = 1
 
@@ -111,7 +111,9 @@ function! Inpaste(name, notify) range
 
     " submit inpaste
     if s:log_in_and_paste(filename, type, lines, a:notify)
-      echomsg s:paste_url . "/" . g:inpaste_user . "/" . filename
+      let url = s:paste_url . "/" . g:inpaste_user . "/" . filename
+      call system("xdg-open " . url)
+      echomsg url
     else 
       echohl Error | echomsg "Failed to submit to inpaste" |echohl None
     endif
