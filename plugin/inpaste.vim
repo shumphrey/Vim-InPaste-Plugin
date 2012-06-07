@@ -17,11 +17,11 @@
 " Other people use my vim repo.
 " Don't force them to have inpaste settings
 if !exists("g:inpaste_user")
-  finish
+"  finish
 endif
 
 if exists("g:loaded_inpaste")
-  finish
+"  finish
 endif
 let g:loaded_inpaste = 1
 
@@ -39,8 +39,12 @@ let s:paste_url = "http://infra/inpaste"
 " Assumes that the paste services has a form with the following fields:
 " name, description, language, code
 " Also assumes that the cookie_jar contains relevant login info
-function! s:paste(name, type, file)
+" Optional notify=yes if a:notify is not empty string
+function! s:paste(name, type, file, notify)
   let command = s:cmd . ' --data "description=VimPost" --data "name=' . a:name . '" --data "language=' . a:type . '" --data-urlencode "code@' . a:file . '" "' . s:paste_url . '" --location'
+  if strlen(a:notify) > 0
+    let command = command . ' --data "notify=YES"'
+  endif
   let result = system(command)
   return result
 endfunction
@@ -60,16 +64,16 @@ endfunction
 
 " Try and paste, if we get a login page try and log in
 " Then try and paste again
-function! s:log_in_and_paste(name, type, lines)
+function! s:log_in_and_paste(name, type, lines, notify)
   let filename = "/tmp/inpaste_post"
   call writefile(a:lines, filename)
-  let result = s:paste(a:name, a:type, filename)
+  let result = s:paste(a:name, a:type, filename, a:notify)
   if strlen(matchstr(result, '<form action="/login"')) > 0
     if !s:login(g:inpaste_user, g:inpaste_pass)
       echohl Error | echomsg "Failed to login" | echohl None
       return 0
     endif
-    let result = s:paste(a:name, a:type, filename)
+    let result = s:paste(a:name, a:type, filename, a:notify)
   endif
 
   if strlen(matchstr(result, 'InPaste: </span>' . a:name)) > 0
@@ -84,12 +88,16 @@ endfunction
 " The main function
 " Takes an optional name and posts the range of text supplied to InPaste
 " If name is not supplied it will attempt to get the name from the filename
-function! Inpaste(name) range
+function! Inpaste(name, notify) range
     " Work out the name of the inpaste
     let filename = a:name
     if strlen(filename) == 0
-        let filename = expand('%')
+        let filename = expand('%:t')
     endif
+    if strlen(filename) == 0
+        echohl ErrorMsg | echomsg "Could not work out inpaste name. Try specifying one manually" | echohl None
+    endif
+
     " Work out the syntax type of the inpaste
     " If we don't have a syntax type, we can't paste
     let type = &filetype
@@ -100,10 +108,9 @@ function! Inpaste(name) range
 
     " Get the entire file into an array of lines
     let lines = getline(a:firstline, a:lastline)
-    "call writefile(lines, "/tmp/woopwoop")
 
     " submit inpaste
-    if s:log_in_and_paste(filename, type, lines)
+    if s:log_in_and_paste(filename, type, lines, a:notify)
       echomsg s:paste_url . "/" . g:inpaste_user . "/" . filename
     else 
       echohl Error | echomsg "Failed to submit to inpaste" |echohl None
@@ -116,4 +123,4 @@ endfunction
 " 0 or 1 arguments are allowed,
 " autocomplete to the filename,
 " range allowed, defaults to whole file
-command! -nargs=? -complete=file -range=% Inpaste <line1>,<line2>call Inpaste(<q-args>)
+command! -bang -nargs=? -complete=file -range=% Inpaste <line1>,<line2>call Inpaste(<q-args>, <q-bang>)
